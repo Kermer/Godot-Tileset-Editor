@@ -292,7 +292,7 @@ func _draw_overlay():
 	for x in range(grid_width):
 		for y in range(grid_height):
 			if !tex.data.has(Vector2(x,y)) || !tex.data[Vector2(x,y)]["export"]:
-				overlay.draw_rect(Rect2(tex.x_off+x*(tex.w+tex.x_sep),tex.y_off+y*(tex.h+tex.y_sep),tex.w,tex.h),Color(0.683594,0.162888,0.162888,0.716981))
+				overlay.draw_rect(Rect2(tex.x_off+x*(tex.w+tex.x_sep),tex.y_off+y*(tex.h+tex.y_sep),tex.w,tex.h),Color(1,0.18,0.1,0.3))
 
 var action = 0 # 0:None 1:Add 2:Remove
 var last_coord = Vector2(-1,-1)
