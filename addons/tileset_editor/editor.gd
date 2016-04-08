@@ -211,7 +211,7 @@ func _on_shape_btn(wich):
 	if wich == 0: # Add
 		print("TODO: Add shape")
 		hide()
-		shape_picker.import(current_mode)
+		shape_picker.import()
 	if wich == 1:
 		print("TODO: Remove shape")
 
