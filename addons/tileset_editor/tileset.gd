@@ -10,12 +10,12 @@ class TextureProperties:
 	var h = 64.0
 	var x_sep = 0.0
 	var y_sep = 0.0
-	var collisions_cache = []
-	var occluder_cache = []
-	var navpoly_cache = []
 	var data = {}
 
 var tileset_data = [] #array of TextureProperties
+var collisions = []
+var occluders = []
+var navpolys = []
 
 func _get_property_list():
 	var d = {}
@@ -71,29 +71,28 @@ func _get_property_list():
 		properties.push_back(d)
 		
 		d = {}
-		d["name"] = basename+"collisions_cache"
-		d["type"] = TYPE_ARRAY
-		d["hint"] = ""
-		properties.push_back(d)
-		
-		d = {}
-		d["name"] = basename+"occluder_cache"
-		d["type"] = TYPE_ARRAY
-		d["hint"] = ""
-		properties.push_back(d)
-		
-		d = {}
-		d["name"] = basename+"navpoly_cache"
-		d["type"] = TYPE_ARRAY
-		d["hint"] = ""
-		properties.push_back(d)
-		
-		d = {}
 		d["name"] = basename+"data"
 		d["type"] = TYPE_DICTIONARY
 		d["hint"] = ""
 		properties.push_back(d)
+		
+	d = {}
+	d["name"] = "collisions"
+	d["type"] = TYPE_ARRAY
+	d["hint"] = ""
+	properties.push_back(d)
 	
+	d = {}
+	d["name"] = "occluders"
+	d["type"] = TYPE_ARRAY
+	d["hint"] = ""
+	properties.push_back(d)
+	
+	d = {}
+	d["name"] = "navpolys"
+	d["type"] = TYPE_ARRAY
+	d["hint"] = ""
+	properties.push_back(d)
 	return properties
 
 func _get(property):
@@ -117,14 +116,14 @@ func _get(property):
 			return data.x_sep
 		if property == "y_sep":
 			return data.y_sep
-		if property == "collisions_cache":
-			return data.collisions_cache
-		if property == "occluder_cache":
-			return data.occluder_cache
-		if property == "navpoly_cache":
-			return data.navpoly_cache
 		if property == "data":
 			return data.data
+	elif property == "collisions":
+		return collisions
+	elif property == "occluders":
+		return occluders
+	elif property == "navpolys":
+		return navpolys
 	return null
 
 func _set(property, value):
@@ -154,14 +153,14 @@ func _set(property, value):
 			data.x_sep = value
 		if property == "y_sep":
 			data.y_sep = value
-		if property == "collisions_cache":
-			data.collisions_cache = value
-		if property == "occluder_cache":
-			data.occluder_cache = value
-		if property == "navpoly_cache":
-			data.navpoly_cache = value
 		if property == "data":
 			data.data = value
+	elif property == "collisions":
+		collisions = value
+	elif property == "occluders":
+		occluders = value
+	elif property == "navpolys":
+		navpolys = value
 
 
 

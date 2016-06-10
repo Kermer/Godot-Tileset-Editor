@@ -2,8 +2,8 @@ tool
 
 extends WindowDialog
 
-export(NodePath) var name_path
 export(NodePath) var scene_tree_path
+export(NodePath) var icon_path
 export(NodePath) var collision_path
 export(NodePath) var collision_poly_path
 export(NodePath) var occluder_path
@@ -15,10 +15,8 @@ export(NodePath) var light_path
 
 # region variables
 
-var shape_name = "" setget set_shape_name,get_shape_name
-
-onready var name_edit = get_node(name_path)
 onready var scene_tree = get_node(scene_tree_path)
+onready var icon_node = get_node(icon_path)
 onready var collision_node = get_node(collision_path)
 onready var collision_poly_node = get_node(collision_poly_path)
 onready var occluder_node = get_node(occluder_path)
@@ -44,14 +42,11 @@ load("res://addons/tileset_editor/icons/toggle_on.png")
 # region signals
 
 signal packed_scene_selected
+signal import_success
+signal import_cancel
 
 # region getters and setters
 
-func set_shape_name(val):
-	name_edit.set_text(val)
-
-func get_shape_name():
-	return name_edit.get_text()
 
 # region constructors
 
@@ -73,7 +68,6 @@ func _ready():
 	scene_tree.connect("button_pressed",self,"_on_button_pressed")
 
 func import():
-	self.shape_name = ""
 	file_dialog.set_title("Load Shape from...")
 	file_dialog.popup_centered()
 	yield(self,"packed_scene_selected")
@@ -102,6 +96,7 @@ func import():
 		else:
 			root.set_cell_mode( 1, root.CELL_MODE_CUSTOM )
 			root.set_custom_color( 0, Color(0.976563,0.312805,0.312805) )
+			root.set_metadata( 1, false)
 		add_childs_recursively(scene_root,root)
 	get_tree().set_debug_collisions_hint(true)
 	get_tree().set_debug_navigation_hint(true)
@@ -132,15 +127,16 @@ func add_childs_recursively(parent_node, parent_item):
 			item.set_metadata( 1, true)
 		else:
 			item.set_custom_color( 0, Color(0.976563,0.312805,0.312805) )
+			item.set_metadata( 1, false)
 		add_childs_recursively(child,item)
 
 func _on_file_selected(file_path):
 	var scn = load(file_path)
 	if scn extends PackedScene:
 		scene_root = scn.instance()
+		emit_signal("packed_scene_selected")
 	else:
 		scene_root = null
-	emit_signal("packed_scene_selected")
 
 func _on_button_pressed( item, column, id ):
 	var import = !item.get_metadata(column)
@@ -157,6 +153,19 @@ func _on_item_selected():
 	get_node(modulate_canvas_path).hide()
 	var item = scene_tree.get_selected()
 	var shape_node = item.get_metadata(0)
+	var icon = shape_node.get_parent()
+	if icon extends Sprite:
+		icon_node.set_texture(icon.get_texture())
+		icon_node.set_region(icon.is_region())
+		icon_node.set_region_rect(icon.get_region_rect())
+		icon_node.set_vframes(icon.get_vframes())
+		icon_node.set_hframes(icon.get_hframes())
+		icon_node.set_flip_h(icon.is_flipped_h())
+		icon_node.set_flip_v(icon.is_flipped_v())
+		icon_node.set_frame(icon.get_frame())
+		
+	else:
+		icon_node.set_texture(null)
 	if shape_node extends CollisionShape2D:
 		shape = shape_node.get_shape()
 		collision_node.set_shape(shape)
@@ -193,3 +202,112 @@ func _on_item_selected():
 		occluder_node.hide()
 	else:
 		shape = null
+
+func get_import_data():
+	var data = []
+	var tree_item = scene_tree.get_root()
+	add_import_data_recursively(tree_item,data)
+	return data
+
+func add_import_data_recursively(tree_item,list):
+	if is_import(tree_item):
+		var d = {}
+		var node = tree_item.get_metadata(0)
+		d["name"] = tree_item.get_metadata(0).get_name()
+		var icon = tree_item.get_metadata(0).get_parent()
+		if icon != null:
+			d["icon"] = tree_item.get_metadata(0).get_parent().get_texture()
+			d["icon_region"] = tree_item.get_metadata(0).get_parent().get_region_rect()
+		if is_collider(node):
+			if node extends CollisionShape2D:
+				d["shape"] = node.get_shape()
+			elif node extends CollisionPolygon2D:
+				var s = ConvexPolygonShape2D.new()
+				s.set_points(node.get_polygon())
+				d["shape"] = s
+		d["offset"] = node.get_pos()
+		list.push_back(d)
+	
+	var child = tree_item.get_children()
+	if child != null:
+		add_import_data_recursively(child,list)
+	var next = tree_item.get_next()
+	if next != null:
+		add_import_data_recursively(next,list)
+
+func is_import(tree_item):
+	return tree_item.get_metadata(1)
+
+func _on_ok_pressed():
+	get_import_data()
+	emit_signal("import_success")
+
+
+func _on_cancel_pressed():
+	emit_signal("import_cancel")
+
+func import_colliders_recursively(who):
+	if (is_collider(who.get_metadata(0)) && !who.get_metadata(1)):
+		who.set_metadata(1,true)
+		who.erase_button(1,0)
+		who.add_button(1,switch_icons[1])
+	if who.get_children() != null:
+		import_colliders_recursively(who.get_children())
+	if who.get_next() != null:
+		import_colliders_recursively(who.get_next())
+
+func import_occluders_recursively(who):
+	if (is_occluder(who.get_metadata(0)) && !who.get_metadata(1)):
+		who.set_metadata(1,true)
+		who.erase_button(1,0)
+		who.add_button(1,switch_icons[1])
+	if who.get_children() != null:
+		import_occluders_recursively(who.get_children())
+	if who.get_next() != null:
+		import_occluders_recursively(who.get_next())
+
+func import_navpolys_recursively(who):
+	if (is_navpoly(who.get_metadata(0)) && !who.get_metadata(1)):
+		who.set_metadata(1,true)
+		who.erase_button(1,0)
+		who.add_button(1,switch_icons[1])
+	if who.get_children() != null:
+		import_navpolys_recursively(who.get_children())
+	if who.get_next() != null:
+		import_navpolys_recursively(who.get_next())
+
+func dont_import_recursively(who):
+	var node = who.get_metadata(0)
+	print(node.get_name())
+	var is_shape = is_collider(node) || is_occluder(node) || is_navpoly(node)
+	if (is_shape && who.get_metadata(1)):
+		who.set_metadata(1,false)
+		who.erase_button(1,0)
+		who.add_button(1,switch_icons[0])
+	if who.get_children() != null:
+		dont_import_recursively(who.get_children())
+	if who.get_next() != null:
+		dont_import_recursively(who.get_next())
+
+func is_collider(node):
+	return (node != null && (node extends CollisionShape2D || node extends CollisionPolygon2D))
+func is_occluder(node):
+	return node != null && node extends LightOccluder2D
+func is_navpoly(node):
+	return node != null && node extends NavigationPolygonInstance
+
+
+func _on_all_colliders_pressed():
+	import_colliders_recursively(scene_tree.get_root())
+
+
+func _on_all_occluders_pressed():
+	import_occluders_recursively(scene_tree.get_root())
+
+
+func _on_all_navpolys_pressed():
+	import_navpolys_recursively(scene_tree.get_root())
+
+
+func _on_clear_selection_pressed():
+	dont_import_recursively(scene_tree.get_root())

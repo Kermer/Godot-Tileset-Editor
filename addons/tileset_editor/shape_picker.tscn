@@ -4,7 +4,7 @@
 [ext_resource path="res://addons/tileset_editor/icons/toggle_on.png" type="Texture" id=2]
 [ext_resource path="res://addons/tileset_editor/icons/toggle_off.png" type="Texture" id=3]
 [ext_resource path="res://addons/tileset_editor/textures/bg.png" type="Texture" id=4]
-[ext_resource path="res://addons/tileset_editor/icons/tule_size_ruler.png" type="Texture" id=5]
+[ext_resource path="res://addons/tileset_editor/icons/tile_size_ruler.png" type="Texture" id=5]
 [ext_resource path="res://addons/tileset_editor/textures/light.png" type="Texture" id=6]
 [ext_resource path="res://addons/tileset_editor/icons/icon_import_check.png" type="Texture" id=7]
 
@@ -33,18 +33,19 @@ tracks/1/keys = { "cont":true, "times":FloatArray( 0, 2 ), "transitions":FloatAr
 
 [node name="shape_picker" type="WindowDialog"]
 
-margin/top = 1.0
-margin/right = 896.0
-margin/bottom = 453.0
 focus/ignore_mouse = false
 focus/stop_mouse = true
 size_flags/horizontal = 2
 size_flags/vertical = 2
+margin/left = 0.0
+margin/top = 1.0
+margin/right = 896.0
+margin/bottom = 453.0
 popup/exclusive = false
 window/title = "Select shape"
 script/script = ExtResource( 1 )
-name_path = NodePath("VBoxContainer/HBoxContainer/name_edit")
-scene_tree_path = NodePath("VBoxContainer/HBoxContainer 2/scene_tree")
+scene_tree_path = NodePath("VBoxContainer/HBoxContainer 2/VBoxContainer 2/scene_tree")
+icon_path = NodePath("VBoxContainer/HBoxContainer 2/VBoxContainer/Panel/Viewport/CanvasLayer/parent/icon")
 collision_path = NodePath("VBoxContainer/HBoxContainer 2/VBoxContainer/Panel/Viewport/CanvasLayer/parent/CollisionShape2D")
 collision_poly_path = NodePath("VBoxContainer/HBoxContainer 2/VBoxContainer/Panel/Viewport/CanvasLayer/parent/CollisionPolygon2D")
 occluder_path = NodePath("VBoxContainer/HBoxContainer 2/VBoxContainer/Panel/Viewport/CanvasLayer/parent/LightOccluder2D")
@@ -58,35 +59,38 @@ light_path = NodePath("VBoxContainer/HBoxContainer 2/VBoxContainer/Panel/Viewpor
 
 anchor/right = 1
 anchor/bottom = 1
-margin/left = 10.0
-margin/top = 10.0
-margin/right = 10.0
-margin/bottom = 38.0
 focus/ignore_mouse = false
 focus/stop_mouse = false
 size_flags/horizontal = 2
 size_flags/vertical = 2
+margin/left = 10.0
+margin/top = 10.0
+margin/right = 10.0
+margin/bottom = 10.0
 alignment = 0
 
 [node name="HBoxContainer" type="HBoxContainer" parent="VBoxContainer"]
 
-margin/right = 876.0
-margin/bottom = 23.0
 focus/ignore_mouse = false
 focus/stop_mouse = false
 size_flags/horizontal = 2
 size_flags/vertical = 2
+margin/left = 0.0
+margin/top = 0.0
+margin/right = 876.0
+margin/bottom = 23.0
 alignment = 0
 __meta__ = { "_editor_collapsed":true }
 
 [node name="Label" type="Label" parent="VBoxContainer/HBoxContainer"]
 
-margin/top = 5.0
-margin/right = 37.0
-margin/bottom = 18.0
 focus/ignore_mouse = true
 focus/stop_mouse = true
 size_flags/horizontal = 2
+margin/left = 0.0
+margin/top = 3.0
+margin/right = 37.0
+margin/bottom = 19.0
 text = "Name:"
 percent_visible = 1.0
 lines_skipped = 0
@@ -94,59 +98,163 @@ max_lines_visible = -1
 
 [node name="name_edit" type="LineEdit" parent="VBoxContainer/HBoxContainer"]
 
-margin/left = 41.0
-margin/right = 876.0
-margin/bottom = 23.0
 focus/ignore_mouse = false
 focus/stop_mouse = true
 size_flags/horizontal = 3
 size_flags/vertical = 2
-text = ""
-max_length = 0
-editable = true
-secret = false
+margin/left = 41.0
+margin/top = 0.0
+margin/right = 876.0
+margin/bottom = 23.0
+focus_mode = 2
 
 [node name="HBoxContainer 2" type="HBoxContainer" parent="VBoxContainer"]
 
-margin/top = 27.0
-margin/right = 876.0
-margin/bottom = 378.0
 focus/ignore_mouse = false
 focus/stop_mouse = false
 size_flags/horizontal = 2
 size_flags/vertical = 3
+margin/left = 0.0
+margin/top = 27.0
+margin/right = 876.0
+margin/bottom = 406.0
 alignment = 0
 
-[node name="scene_tree" type="Tree" parent="VBoxContainer/HBoxContainer 2"]
+[node name="VBoxContainer 2" type="VBoxContainer" parent="VBoxContainer/HBoxContainer 2"]
 
-margin/right = 616.0
-margin/bottom = 351.0
+focus/ignore_mouse = false
+focus/stop_mouse = false
+size_flags/horizontal = 3
+size_flags/vertical = 2
+size_flags/stretch_ratio = 4.0
+margin/left = 0.0
+margin/top = 0.0
+margin/right = 609.0
+margin/bottom = 379.0
+alignment = 0
+
+[node name="HBoxContainer" type="HBoxContainer" parent="VBoxContainer/HBoxContainer 2/VBoxContainer 2"]
+
+focus/ignore_mouse = false
+focus/stop_mouse = false
+size_flags/horizontal = 2
+size_flags/vertical = 2
+margin/left = 0.0
+margin/top = 0.0
+margin/right = 609.0
+margin/bottom = 19.0
+alignment = 0
+
+[node name="all_colliders" type="Button" parent="VBoxContainer/HBoxContainer 2/VBoxContainer 2/HBoxContainer"]
+
+focus/ignore_mouse = false
+focus/stop_mouse = true
+size_flags/horizontal = 2
+size_flags/vertical = 2
+margin/left = 0.0
+margin/top = 0.0
+margin/right = 117.0
+margin/bottom = 19.0
+toggle_mode = false
+enabled_focus_mode = 2
+shortcut = null
+text = "Select all Colliders"
+flat = false
+
+[node name="all_occluders" type="Button" parent="VBoxContainer/HBoxContainer 2/VBoxContainer 2/HBoxContainer"]
+
+focus/ignore_mouse = false
+focus/stop_mouse = true
+size_flags/horizontal = 2
+size_flags/vertical = 2
+margin/left = 121.0
+margin/top = 0.0
+margin/right = 247.0
+margin/bottom = 19.0
+toggle_mode = false
+enabled_focus_mode = 2
+shortcut = null
+text = "Select all Occluders"
+flat = false
+
+[node name="all_navpolys" type="Button" parent="VBoxContainer/HBoxContainer 2/VBoxContainer 2/HBoxContainer"]
+
+focus/ignore_mouse = false
+focus/stop_mouse = true
+size_flags/horizontal = 2
+size_flags/vertical = 2
+margin/left = 251.0
+margin/top = 0.0
+margin/right = 373.0
+margin/bottom = 19.0
+toggle_mode = false
+enabled_focus_mode = 2
+shortcut = null
+text = "Select all Navpolys"
+flat = false
+
+[node name="clear_selection" type="Button" parent="VBoxContainer/HBoxContainer 2/VBoxContainer 2/HBoxContainer"]
+
+focus/ignore_mouse = false
+focus/stop_mouse = true
+size_flags/horizontal = 2
+size_flags/vertical = 2
+margin/left = 377.0
+margin/top = 0.0
+margin/right = 498.0
+margin/bottom = 19.0
+toggle_mode = false
+enabled_focus_mode = 2
+shortcut = null
+text = "Clear all Selections"
+flat = false
+
+[node name="scene_tree" type="Tree" parent="VBoxContainer/HBoxContainer 2/VBoxContainer 2"]
+
 focus/ignore_mouse = false
 focus/stop_mouse = true
 size_flags/horizontal = 3
 size_flags/vertical = 3
 size_flags/stretch_ratio = 5.0
+margin/left = 0.0
+margin/top = 23.0
+margin/right = 609.0
+margin/bottom = 379.0
 custom_icons/checked = ExtResource( 2 )
 custom_icons/unchecked = ExtResource( 3 )
 
+[node name="VSeparator" type="VSeparator" parent="VBoxContainer/HBoxContainer 2"]
+
+focus/ignore_mouse = false
+focus/stop_mouse = true
+size_flags/horizontal = 2
+size_flags/vertical = 2
+margin/left = 613.0
+margin/top = 0.0
+margin/right = 616.0
+margin/bottom = 379.0
+
 [node name="VBoxContainer" type="VBoxContainer" parent="VBoxContainer/HBoxContainer 2"]
 
-margin/left = 620.0
-margin/right = 876.0
-margin/bottom = 351.0
 focus/ignore_mouse = false
 focus/stop_mouse = false
 size_flags/horizontal = 3
 size_flags/vertical = 2
+margin/left = 620.0
+margin/top = 0.0
+margin/right = 876.0
+margin/bottom = 379.0
 alignment = 0
 
 [node name="Label" type="Label" parent="VBoxContainer/HBoxContainer 2/VBoxContainer"]
 
-margin/right = 256.0
-margin/bottom = 13.0
 focus/ignore_mouse = true
 focus/stop_mouse = true
 size_flags/horizontal = 2
+margin/left = 0.0
+margin/top = 0.0
+margin/right = 256.0
+margin/bottom = 16.0
 text = "Preview"
 percent_visible = 1.0
 lines_skipped = 0
@@ -154,25 +262,27 @@ max_lines_visible = -1
 
 [node name="HSeparator" type="HSeparator" parent="VBoxContainer/HBoxContainer 2/VBoxContainer"]
 
-margin/top = 17.0
-margin/right = 256.0
-margin/bottom = 20.0
 focus/ignore_mouse = false
 focus/stop_mouse = true
 size_flags/horizontal = 2
 size_flags/vertical = 2
+margin/left = 0.0
+margin/top = 20.0
+margin/right = 256.0
+margin/bottom = 23.0
 
 [node name="Panel" type="Panel" parent="VBoxContainer/HBoxContainer 2/VBoxContainer"]
 
 visibility/light_mask = 0
-margin/top = 24.0
-margin/right = 256.0
-margin/bottom = 280.0
 rect/min_size = Vector2( 256, 256 )
 focus/ignore_mouse = false
 focus/stop_mouse = true
 size_flags/horizontal = 3
 size_flags/vertical = 3
+margin/left = 0.0
+margin/top = 27.0
+margin/right = 256.0
+margin/bottom = 283.0
 __meta__ = { "_editor_collapsed":true }
 
 [node name="Viewport" type="Viewport" parent="VBoxContainer/HBoxContainer 2/VBoxContainer/Panel"]
@@ -206,6 +316,10 @@ transform/pos = Vector2( 128, 128 )
 [node name="bg" type="Sprite" parent="VBoxContainer/HBoxContainer 2/VBoxContainer/Panel/Viewport/CanvasLayer/parent"]
 
 texture = ExtResource( 4 )
+
+[node name="icon" type="Sprite" parent="VBoxContainer/HBoxContainer 2/VBoxContainer/Panel/Viewport/CanvasLayer/parent"]
+
+region = true
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="VBoxContainer/HBoxContainer 2/VBoxContainer/Panel/Viewport/CanvasLayer/parent"]
 
@@ -280,52 +394,72 @@ shadow/item_mask = 1
 
 [node name="Control" type="Control" parent="VBoxContainer/HBoxContainer 2/VBoxContainer"]
 
-margin/top = 284.0
-margin/right = 256.0
-margin/bottom = 351.0
 focus/ignore_mouse = false
 focus/stop_mouse = true
 size_flags/horizontal = 2
 size_flags/vertical = 3
 size_flags/stretch_ratio = 7.0
+margin/left = 0.0
+margin/top = 287.0
+margin/right = 256.0
+margin/bottom = 379.0
 
 [node name="HBoxContainer 3" type="HBoxContainer" parent="VBoxContainer"]
 
-margin/top = 382.0
-margin/right = 876.0
-margin/bottom = 404.0
 focus/ignore_mouse = false
 focus/stop_mouse = false
 size_flags/horizontal = 2
 size_flags/vertical = 2
+margin/left = 0.0
+margin/top = 410.0
+margin/right = 876.0
+margin/bottom = 432.0
 custom_constants/separation = 32
 alignment = 1
 
 [node name="ok" type="Button" parent="VBoxContainer/HBoxContainer 3"]
 
-margin/left = 373.0
-margin/right = 419.0
-margin/bottom = 22.0
 focus/ignore_mouse = false
 focus/stop_mouse = true
 size_flags/horizontal = 2
 size_flags/vertical = 2
+margin/left = 373.0
+margin/top = 0.0
+margin/right = 419.0
+margin/bottom = 22.0
 toggle_mode = false
+enabled_focus_mode = 2
+shortcut = null
 text = "Ok"
 icon = ExtResource( 7 )
 flat = false
 
 [node name="cancel" type="Button" parent="VBoxContainer/HBoxContainer 3"]
 
-margin/left = 451.0
-margin/right = 502.0
-margin/bottom = 22.0
 focus/ignore_mouse = false
 focus/stop_mouse = true
 size_flags/horizontal = 2
 size_flags/vertical = 2
+margin/left = 451.0
+margin/top = 0.0
+margin/right = 502.0
+margin/bottom = 22.0
 toggle_mode = false
+enabled_focus_mode = 2
+shortcut = null
 text = "Cancel"
 flat = false
+
+[connection signal="pressed" from="VBoxContainer/HBoxContainer 2/VBoxContainer 2/HBoxContainer/all_colliders" to="." method="_on_all_colliders_pressed"]
+
+[connection signal="pressed" from="VBoxContainer/HBoxContainer 2/VBoxContainer 2/HBoxContainer/all_occluders" to="." method="_on_all_occluders_pressed"]
+
+[connection signal="pressed" from="VBoxContainer/HBoxContainer 2/VBoxContainer 2/HBoxContainer/all_navpolys" to="." method="_on_all_navpolys_pressed"]
+
+[connection signal="pressed" from="VBoxContainer/HBoxContainer 2/VBoxContainer 2/HBoxContainer/clear_selection" to="." method="_on_clear_selection_pressed"]
+
+[connection signal="pressed" from="VBoxContainer/HBoxContainer 3/ok" to="." method="_on_ok_pressed"]
+
+[connection signal="pressed" from="VBoxContainer/HBoxContainer 3/cancel" to="." method="_on_cancel_pressed"]
 
 

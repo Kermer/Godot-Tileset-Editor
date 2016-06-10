@@ -30,9 +30,6 @@ export(NodePath) var layout_h_path
 export(NodePath) var layout_x_sep_path
 export(NodePath) var layout_y_Sep_path
 
-export(NodePath) var save_path
-export(NodePath) var load_path
-export(NodePath) var new_path
 export(NodePath) var export_path
 
 export(NodePath) var add_texture_path
@@ -50,12 +47,7 @@ get_node(tool_occluder_path),
 get_node(tool_navpoly_path)
 ]
 
-onready var resource_buttons = [
-get_node(save_path),
-get_node(load_path),
-get_node(new_path),
-get_node(export_path)
-]
+onready var export_button = get_node(export_path)
 
 onready var texture_buttons = [
 get_node(add_texture_path),
@@ -87,8 +79,6 @@ onready var shape_list = get_node(shape_list_path)
 
 # region signals
 
-signal save_requested()
-signal load_requested()
 signal export_requested()
 
 #region variables
@@ -105,14 +95,14 @@ onready var shape_picker = load("res://addons/tileset_editor/shape_picker.tscn")
 func _ready():
 	for i in range(mode_buttons.size()):
 		mode_buttons[i].connect("pressed", self, "_on_change_mode", [i])
-	for i in range(resource_buttons.size()):
-		resource_buttons[i].connect("pressed", self, "_on_resource_btn", [i])
 	for i in range(texture_buttons.size()):
 		texture_buttons[i].connect("pressed", self, "_on_texture_btn", [i])
 	for i in range(shape_buttons.size()):
 		shape_buttons[i].connect("pressed", self, "_on_shape_btn", [i])
 	for i in layout_spinboxes:
 		i.connect("value_changed", self, "_layout_changed")
+	
+	export_button.connect("pressed", self, "_on_export_btn")
 	
 	texture_dialog.set_access(FileDialog.ACCESS_RESOURCES)
 	texture_dialog.add_filter("*.atex")
@@ -174,28 +164,17 @@ func _on_change_mode(mode):
 		if current_tex_id < 0 || current_tex_id >= tileset.tileset_data.size():
 			return
 		if mode == 1: # Collision shape
-			for shape in tileset.tileset_data[current_tex_id].collisions_cache:
-				shape_list.add_item(shape["name"],icon_collider)
+			for shape in tileset.collisions:
+				shape_list.add_item(shape["name"],shape["icon"])
 		if mode == 2: # Occluder shape
-			for shape in tileset.tileset_data[current_tex_id].occluder_cache:
-				shape_list.add_item(shape["name"],icon_occlusion)
+			for shape in tileset.occluders:
+				shape_list.add_item(shape["name"],shape["icon"])
 		if mode == 3: # Navpoly shape
-			for shape in tileset.tileset_data[current_tex_id].navpoly_cache:
-				shape_list.add_item(shape["name"],icon_navpoly)
+			for shape in tileset.navpolys:
+				shape_list.add_item(shape["name"],shape["icon"])
 
-func _on_resource_btn(wich):
-	if wich == 0: # Save
-		emit_signal("save_requested")
-	if wich == 1: # Load
-		emit_signal("load_requested")
-	if wich == 2: # New
-		tileset = tileset_script.new()
-		current_tex_id=-1
-		texture_list.clear()
-		shape_list.clear()
-		texture_view.set_texture(null)
-	if wich == 3: # Load
-		emit_signal("export_requested")
+func _on_export_btn():
+	emit_signal("export_requested")
 	
 
 func _on_texture_btn(wich):
@@ -205,11 +184,14 @@ func _on_texture_btn(wich):
 		texture_dialog.set_mode(FileDialog.MODE_OPEN_FILE)
 		texture_dialog.popup_centered()
 	if wich == 1: # Remove
+		tileset.tileset_data.remove(current_tex_id)
+		texture_list.remove_item(current_tex_id)
+		current_tex_id = -1
+		update()
 		print("TODO: Remove texture")
 
 func _on_shape_btn(wich):
 	if wich == 0: # Add
-		print("TODO: Add shape")
 		hide()
 		shape_picker.import()
 	if wich == 1:
@@ -296,6 +278,7 @@ func _draw_overlay():
 
 var action = 0 # 0:None 1:Add 2:Remove
 var last_coord = Vector2(-1,-1)
+
 func _input_overlay(ev):
 	if current_tex_id < 0 || current_tex_id >= tileset.tileset_data.size():
 		return # Nothing to do here
