@@ -88,6 +88,7 @@ var current_tex_id = -1
 var changing_texture = false
 onready var tileset = tileset_script.new()
 onready var texture_dialog = FileDialog.new()
+onready var export_dialog = FileDialog.new()
 onready var shape_picker = load("res://addons/tileset_editor/shape_picker.tscn").instance()
 
 #region constructors
@@ -125,6 +126,15 @@ func _ready():
 	get_parent().add_child(texture_dialog)
 	get_parent().add_child(shape_picker)
 	texture_dialog.set_size(Vector2(700,500))
+	
+	export_dialog.set_access(FileDialog.ACCESS_RESOURCES)
+	for ext in ["tres","res","xml"]:
+		export_dialog.add_filter("*."+ext)
+	export_dialog.set_title("Export TileSet")
+	export_dialog.set_mode(FileDialog.MODE_SAVE_FILE)
+	export_dialog.set_size(Vector2(700,500))
+	export_dialog.connect("file_selected",self,"_on_export")
+	get_parent().add_child(export_dialog)
 	
 	texture_list.connect("item_selected",self,"_on_texture_selected")
 	
@@ -174,8 +184,10 @@ func _on_change_mode(mode):
 				shape_list.add_item(shape["name"],shape["icon"])
 
 func _on_export_btn():
-	emit_signal("export_requested")
-	
+	export_dialog.popup_centered()
+
+func _on_export( path ):
+	emit_signal("export_requested",path)
 
 func _on_texture_btn(wich):
 	if wich == 0: # Add

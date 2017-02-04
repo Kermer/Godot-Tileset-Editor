@@ -163,4 +163,24 @@ func _set(property, value):
 		navpolys = value
 
 
-
+func generate_tileset():
+	var tileset = TileSet.new()
+	var id = 0
+	for ts_data in tileset_data:
+		var tid = 0 # relative to Texture instead of to Tileset
+		for t_pos in ts_data.data:
+			if ts_data.data[t_pos]["export"] == true:
+				tileset.create_tile(id)
+				# Attach texture to tile
+				tileset.tile_set_texture(id,ts_data.texture)
+				var tex_pos = Vector2(ts_data.w+ts_data.x_sep,ts_data.h+ts_data.y_sep) * t_pos
+				tex_pos += Vector2(ts_data.x_off,ts_data.y_off)
+				var tex_rect = Rect2(tex_pos, Vector2(ts_data.w,ts_data.h))
+				tileset.tile_set_region(id,tex_rect)
+				# Name the tile
+				var tname = ts_data.texture.get_path().get_file().basename()
+				tname += "_"+str(tid).pad_zeros(3)
+				tileset.tile_set_name(id,tname)
+				# TODO: Attach Collision, Occluder, Navigation
+				id += 1; tid += 1
+	return tileset
