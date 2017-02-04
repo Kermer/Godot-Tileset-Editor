@@ -211,20 +211,25 @@ func get_import_data():
 
 func add_import_data_recursively(tree_item,list):
 	if is_import(tree_item):
-		var d = {}
+		var d = {"type":"undefined","icon":null,"icon_region":Rect2(Vector2(),Vector2())} # default values
 		var node = tree_item.get_metadata(0)
-		d["name"] = tree_item.get_metadata(0).get_name()
+		d["name"] = tree_item.get_metadata(0).get_parent().get_name()
 		var icon = tree_item.get_metadata(0).get_parent()
 		if icon != null:
-			d["icon"] = tree_item.get_metadata(0).get_parent().get_texture()
-			d["icon_region"] = tree_item.get_metadata(0).get_parent().get_region_rect()
+			d["icon"] = icon.get_texture()
+			d["icon_region"] = icon.get_region_rect()
 		if is_collider(node):
+			d["type"] = "collision"
 			if node extends CollisionShape2D:
 				d["shape"] = node.get_shape()
 			elif node extends CollisionPolygon2D:
 				var s = ConvexPolygonShape2D.new()
 				s.set_points(node.get_polygon())
 				d["shape"] = s
+		elif is_navpoly(node):
+			d["type"] = "navpoly"
+		elif is_occluder(node):
+			d["type"] = "occluder"
 		d["offset"] = node.get_pos()
 		list.push_back(d)
 	
@@ -239,11 +244,15 @@ func is_import(tree_item):
 	return tree_item.get_metadata(1)
 
 func _on_ok_pressed():
-	get_import_data()
-	emit_signal("import_success")
+	var data = get_import_data()
+	if data.size() == 0:
+		return
+	hide()
+	emit_signal("import_success",data)
 
 
 func _on_cancel_pressed():
+	hide()
 	emit_signal("import_cancel")
 
 func import_colliders_recursively(who):

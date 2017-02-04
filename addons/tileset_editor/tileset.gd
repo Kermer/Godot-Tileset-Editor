@@ -184,3 +184,11 @@ func generate_tileset():
 				# TODO: Attach Collision, Occluder, Navigation
 				id += 1; tid += 1
 	return tileset
+
+func add_collision(shape_data): collisions.append(shape_data)
+func add_navpoly(shape_data): navpolys.append(shape_data)
+func add_occluder(shape_data): occluders.append(shape_data)
+
+func remove_collision(shape_id): collisions.remove(shape_id)
+func remove_navpoly(shape_id): navpolys.remove(shape_id)
+func remove_occluder(shape_id): occluders.remove(shape_id)

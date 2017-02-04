@@ -79,7 +79,7 @@ onready var shape_list = get_node(shape_list_path)
 
 # region signals
 
-signal export_requested()
+signal export_requested
 
 #region variables
 
@@ -123,9 +123,8 @@ func _ready():
 	texture_dialog.add_filter("*.xml")
 	texture_dialog.add_filter("*.xtex")
 	texture_dialog.connect("file_selected",self,"_on_texture_added")
-	get_parent().add_child(texture_dialog)
-	get_parent().add_child(shape_picker)
 	texture_dialog.set_size(Vector2(700,500))
+	get_parent().add_child(texture_dialog)
 	
 	export_dialog.set_access(FileDialog.ACCESS_RESOURCES)
 	for ext in ["tres","res","xml"]:
@@ -136,10 +135,17 @@ func _ready():
 	export_dialog.connect("file_selected",self,"_on_export")
 	get_parent().add_child(export_dialog)
 	
+	shape_picker.connect("import_success",self,"_on_shape_import_success")
+	shape_picker.connect("import_cancel",self,"_on_shape_import_cancel")
+	get_parent().add_child(shape_picker)
+	
 	texture_list.connect("item_selected",self,"_on_texture_selected")
 	
 	overlay.connect("draw", self, "_draw_overlay")
 	overlay.connect("input_event", self, "_input_overlay")
+	
+	shape_list.set_select_mode(ItemList.SELECT_MULTI)
+	shape_list.set_fixed_icon_size(Vector2(20,20))
 	
 	_on_change_mode(0)
 
@@ -162,6 +168,10 @@ func _on_change_mode(mode):
 	if mode == current_mode && !changing_texture:
 		return
 	current_mode = mode
+	refresh_toolbox()
+
+func refresh_toolbox():
+	var mode = current_mode
 	if (mode==0):
 		layout_toolbox.show()
 		shape_toolbox.hide()
@@ -173,15 +183,16 @@ func _on_change_mode(mode):
 		shape_list.clear()
 		if current_tex_id < 0 || current_tex_id >= tileset.tileset_data.size():
 			return
-		if mode == 1: # Collision shape
-			for shape in tileset.collisions:
-				shape_list.add_item(shape["name"],shape["icon"])
-		if mode == 2: # Occluder shape
-			for shape in tileset.occluders:
-				shape_list.add_item(shape["name"],shape["icon"])
-		if mode == 3: # Navpoly shape
-			for shape in tileset.navpolys:
-				shape_list.add_item(shape["name"],shape["icon"])
+		var items = []
+		if mode == 1: items = tileset.collisions # Collision shape
+		elif mode == 2: items = tileset.occluders # Occluder shape
+		elif mode == 3: items = tileset.navpolys # Navpoly shape
+		
+		var item_id = 0
+		for item in items:
+			shape_list.add_item(item.name,item.icon)
+			shape_list.set_item_icon_region(item_id,item.icon_region)
+			item_id += 1
 
 func _on_export_btn():
 	export_dialog.popup_centered()
@@ -191,8 +202,6 @@ func _on_export( path ):
 
 func _on_texture_btn(wich):
 	if wich == 0: # Add
-		hide()
-		texture_dialog.set_title("Save tileset template as...")
 		texture_dialog.set_mode(FileDialog.MODE_OPEN_FILE)
 		texture_dialog.popup_centered()
 	if wich == 1: # Remove
@@ -207,7 +216,28 @@ func _on_shape_btn(wich):
 		hide()
 		shape_picker.import()
 	if wich == 1:
+		var selected_shapes = Array(shape_list.get_selected_items()) # IntArray -> Array
+		selected_shapes.sort()
+		selected_shapes.invert() # Go from biggest ID to lowest
+		for shape_id in selected_shapes:
+			if current_mode == 1: tileset.remove_collision(shape_id); shape_list.remove_item(shape_id)
+			elif current_mode == 2: tileset.remove_navpoly(shape_id); shape_list.remove_item(shape_id)
+			elif current_mode == 3: tileset.remove_occluder(shape_id); shape_list.remove_item(shape_id)
 		print("TODO: Remove shape")
+
+func _on_shape_import_success( import_data ):
+	for shape_data in import_data:
+		var type = shape_data.type
+		shape_data.erase("type")
+		if type == "collision": tileset.add_collision( shape_data )
+		elif type == "navpoly": tileset.add_navpoly( shape_data )
+		elif type == "occluder": tileset.add_occluder( shape_data )
+	refresh_toolbox()
+	show()
+	
+
+func _on_shape_import_cancel():
+	show()
 
 func _layout_changed(val):
 	if !changing_texture:
