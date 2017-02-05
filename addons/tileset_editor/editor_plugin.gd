@@ -42,16 +42,18 @@ func _exit_tree():
 
 func _on_export_requested( path ):
 	if editor.tileset.get("texture_count") == 0: # No textures
-		info_dialog.set_text("Add some textures first!")
-		info_dialog.popup_centered()
+		alert("Add some textures first!")
 		return
 	var tileset = editor.tileset.generate_tileset()
 	if tileset.get_last_unused_tile_id() == 0: # No tiles in tileset
-		info_dialog.set_text("You must select tiles which are going to be exported!")
-		info_dialog.popup_centered()
+		alert("You must select tiles which are going to be exported!")
 		return
 	# Finally export the tileset...
 	var err = ResourceSaver.save(path,tileset)
-	if err == OK: info_dialog.set_text("Export succesful!")
-	else: info_dialog.set_text("Failed to export into selected file!\n\nError: "+str(err))
+	if err == OK: alert("Export succesful!")
+	else: alert("Failed to export into selected file!\n\nError: "+str(err))
+
+func alert(text,title="Alert!"):
+	info_dialog.set_title(str(title))
+	info_dialog.set_text(str(text))
 	info_dialog.popup_centered()

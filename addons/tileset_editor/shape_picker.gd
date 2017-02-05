@@ -169,7 +169,7 @@ func _on_item_selected():
 	if shape_node extends CollisionShape2D:
 		shape = shape_node.get_shape()
 		collision_node.set_shape(shape)
-		print(shape.get_path())
+		#print(shape.get_path())
 		collision_node.set_pos(shape_node.get_pos())
 		collision_node.show()
 		collision_poly_node.hide()

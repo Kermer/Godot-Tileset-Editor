@@ -35,8 +35,10 @@ export(NodePath) var export_path
 export(NodePath) var add_texture_path
 export(NodePath) var del_texture_path
 
-export(NodePath) var add_shape_path
-export(NodePath) var del_shape_path
+export(NodePath) var attach_shapes_path
+export(NodePath) var deattach_shapes_path
+export(NodePath) var import_shapes_path
+export(NodePath) var remove_shapes_path
 
 # region control variables
 
@@ -55,8 +57,10 @@ get_node(del_texture_path)
 ]
 
 onready var shape_buttons = [
-get_node(add_shape_path),
-get_node(del_shape_path)
+get_node(import_shapes_path),
+get_node(remove_shapes_path),
+get_node(attach_shapes_path),
+get_node(deattach_shapes_path)
 ]
 
 onready var layout_spinboxes = [
@@ -193,6 +197,7 @@ func refresh_toolbox():
 			shape_list.add_item(item.name,item.icon)
 			shape_list.set_item_icon_region(item_id,item.icon_region)
 			item_id += 1
+		refresh_active_shapes()
 
 func _on_export_btn():
 	export_dialog.popup_centered()
@@ -211,19 +216,46 @@ func _on_texture_btn(wich):
 		update()
 		print("TODO: Remove texture")
 
-func _on_shape_btn(wich):
-	if wich == 0: # Add
+func _on_shape_btn(which):
+	if which == 0: # Import
 		hide()
 		shape_picker.import()
-	if wich == 1:
+	elif which == 1: # Remove
 		var selected_shapes = Array(shape_list.get_selected_items()) # IntArray -> Array
 		selected_shapes.sort()
 		selected_shapes.invert() # Go from biggest ID to lowest
 		for shape_id in selected_shapes:
 			if current_mode == 1: tileset.remove_collision(shape_id); shape_list.remove_item(shape_id)
-			elif current_mode == 2: tileset.remove_navpoly(shape_id); shape_list.remove_item(shape_id)
-			elif current_mode == 3: tileset.remove_occluder(shape_id); shape_list.remove_item(shape_id)
-		print("TODO: Remove shape")
+			elif current_mode == 2: tileset.remove_occluder(shape_id); shape_list.remove_item(shape_id)
+			elif current_mode == 3: tileset.remove_navpoly(shape_id); shape_list.remove_item(shape_id)
+	elif (which == 2 or which == 3): # Attach or Deattach (Add/Remove from tile)
+		var selected_shapes = shape_list.get_selected_items()
+		var err_text = ""
+		if (current_mode==1 and tileset.collisions.size()==0) or (current_mode==2 and tileset.occluders.size()==0) or (current_mode==3 and tileset.navpolys.size()==0): 
+			err_text += "\n\tThere are no shapes, please import some..."
+		elif selected_shapes.size() == 0: err_text += "\n\tNo shapes selected!"
+		elif (selected_shapes.size() > 1 and which==2): err_text += "\n\tCurrently you can only add 1 shape per tile :("
+		if selected_tiles.size() == 0: err_text += "\n\tNo tiles selected!"
+		if err_text != "":
+			alert("Failed to Add/Remove shape(s):"+err_text)
+			return
+		if which == 2: # Attach
+			if current_mode == 1:
+				for tile in selected_tiles: tileset.attach_collision(current_tex_id,tile,selected_shapes[0])
+			elif current_mode == 2:
+				for tile in selected_tiles: tileset.attach_occluder(current_tex_id,tile,selected_shapes[0])
+			elif current_mode == 3:
+				for tile in selected_tiles: tileset.attach_navpoly(current_tex_id,tile,selected_shapes[0])
+			refresh_active_shapes(selected_shapes) # Override active selection with 'selected_shapes'
+		elif which == 3: # Deattach
+			if current_mode == 1:
+				for tile in selected_tiles: tileset.deattach_collision(current_tex_id,tile,selected_shapes[0])
+			elif current_mode == 2:
+				for tile in selected_tiles: tileset.deattach_occluder(current_tex_id,tile,selected_shapes[0])
+			elif current_mode == 3:
+				for tile in selected_tiles: tileset.deattach_navpoly(current_tex_id,tile,selected_shapes[0])
+			refresh_active_shapes()
+		
 
 func _on_shape_import_success( import_data ):
 	for shape_data in import_data:
@@ -273,6 +305,7 @@ func _on_texture_selected(id):
 	var values = [tex.x_off,tex.y_off,tex.w,tex.h,tex.x_sep,tex.y_sep]
 	for i in range(values.size()):
 		layout_spinboxes[i].set_value(values[i])
+	selected_tiles.clear()
 	_on_change_mode(current_mode)
 	changing_texture = false
 
@@ -317,16 +350,23 @@ func _draw_overlay():
 		for y in range(grid_height):
 			if !tex.data.has(Vector2(x,y)) || !tex.data[Vector2(x,y)]["export"]:
 				overlay.draw_rect(Rect2(tex.x_off+x*(tex.w+tex.x_sep),tex.y_off+y*(tex.h+tex.y_sep),tex.w,tex.h),Color(1,0.18,0.1,0.3))
+	# Mark selected tile
+	for selected_tile in selected_tiles:
+		var x = tex.x_off + (tex.w+tex.x_sep)*selected_tile.x
+		var y = tex.y_off + (tex.h+tex.y_sep)*selected_tile.y
+		overlay.draw_rect(Rect2(x,y,tex.w,tex.h),Color(0.1,0.1,1,0.3))
 
 var action = 0 # 0:None 1:Add 2:Remove
 var last_coord = Vector2(-1,-1)
+var selected_tiles = [] # Array of Vector2, currently selected tiles
 
 func _input_overlay(ev):
 	if current_tex_id < 0 || current_tex_id >= tileset.tileset_data.size():
 		return # Nothing to do here
-	
 	var tex = tileset.tileset_data[current_tex_id]
-	if current_mode == 0: # Select what to export
+	
+#	if current_mode == 0: # Select what to export
+	if true: # allow tiles selection in every mode
 		if ev.type==InputEvent.MOUSE_BUTTON&&ev.pressed:
 			if action != 0:
 				return
@@ -337,21 +377,17 @@ func _input_overlay(ev):
 				var x = int(ev.x-tex.x_off)/int(tex.w+tex.x_sep)
 				var y = int(ev.y-tex.y_off)/int(tex.h+tex.y_sep)
 				var coord = Vector2(x,y)
-				if !tex.data.has(coord):
-					tex.data[coord] = {}
-				tex.data[coord]["export"]=true
+				_tile_selected(coord,action,(ev.control))
 				overlay.update()
 				last_coord = coord
-			elif ev.button_index == 2: # LMB
+			elif ev.button_index == 2: # RMB
 				action = 2
 				if (ev.x < tex.x_off || ev.y < tex.y_off):
 					return
 				var x = int(ev.x-tex.x_off)/int(tex.w+tex.x_sep)
 				var y = int(ev.y-tex.y_off)/int(tex.h+tex.y_sep)
 				var coord = Vector2(x,y)
-				if !tex.data.has(coord):
-					tex.data[coord] = {}
-				tex.data[coord]["export"]=false
+				_tile_selected(coord,action,(ev.control))
 				overlay.update()
 				last_coord = coord
 		if ev.type==InputEvent.MOUSE_BUTTON&&!ev.pressed:
@@ -364,11 +400,50 @@ func _input_overlay(ev):
 			var coord = Vector2(x,y)
 			if coord == last_coord:
 				return
-			if !tex.data.has(coord):
-				tex.data[coord] = {}
-			tex.data[coord]["export"]=(action==1)
+			_tile_selected(coord,action,true)
 			overlay.update()
 			last_coord = coord
+
+func _tile_selected(coord,action,append):
+	var tex = tileset.tileset_data[current_tex_id]
+	if !tex.data.has(coord): tex.data[coord] = {}
+	
+	if (action==1): # LMB
+		if (not append and selected_tiles.size() > 0): selected_tiles.clear()
+		if !selected_tiles.has(coord): selected_tiles.append(coord)
+		tex.data[coord]["export"] = true
+	elif (action==2): # RMB
+		if (selected_tiles.size() > 0):
+			if not append: selected_tiles.clear()
+			elif (append and selected_tiles.has(coord)): selected_tiles.erase(coord)
+		tex.data[coord]["export"] = false
+	refresh_active_shapes()
+
+func alert( text, title="Alert!" ):
+	get_parent().alert(text,title)
+
+func refresh_active_shapes(forced=null):
+	var active_shapes = []
+	if forced!=null and (typeof(forced)==TYPE_ARRAY or typeof(forced)==TYPE_INT_ARRAY):
+		active_shapes = Array(forced)
+	else:
+		if selected_tiles.size() == 1:
+			var tile = selected_tiles[0]
+			var tile_data = tileset.tileset_data[current_tex_id].data[tile]
+			if current_mode == 1 and tile_data.has("collision"): 
+				var shape_id = tileset.collisions.find(tile_data["collision"])
+				active_shapes = [ shape_id ]
+			elif current_mode == 2 and tile_data.has("occluder"): 
+				var shape_id = tileset.occluders.find(tile_data["occluder"])
+				active_shapes = [ shape_id ]
+			elif current_mode == 3 and tile_data.has("navpoly"): 
+				var shape_id = tileset.navpolys.find(tile_data["navpoly"])
+				active_shapes = [ shape_id ]
+	for shape_id in range(shape_list.get_item_count()):
+		shape_list.set_item_custom_bg_color(shape_id,Color(1,1,1,0))
+	for shape_id in active_shapes:
+		shape_list.set_item_custom_bg_color(shape_id,Color(0.1,0.1,1,0.4))
+	shape_list.update()
 
 func reload(res):
 	tileset=res
