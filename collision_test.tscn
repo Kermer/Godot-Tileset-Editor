@@ -47,17 +47,20 @@ outlines = [ Vector2Array( -16, 0, 0, 0, 0, 16, -16, 16 ) ]
 
 transform/pos = Vector2( 96, 0 )
 texture = ExtResource( 1 )
+centered = false
 region = true
 region_rect = Rect2( 132, 66, 32, 32 )
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="wall"]
 
+transform/pos = Vector2( 16, 16 )
 shape = SubResource( 1 )
 trigger = false
 _update_shape_index = -1
 
 [node name="LightOccluder2D" type="LightOccluder2D" parent="wall"]
 
+transform/pos = Vector2( 16, 16 )
 occluder = SubResource( 2 )
 light_mask = 1
 
@@ -65,18 +68,20 @@ light_mask = 1
 
 transform/pos = Vector2( 64, 0 )
 texture = ExtResource( 1 )
+centered = false
 region = true
 region_rect = Rect2( 132, 99, 32, 32 )
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="border_a"]
 
-transform/pos = Vector2( 0, -6 )
+transform/pos = Vector2( 16, 10 )
 shape = SubResource( 3 )
 trigger = false
 _update_shape_index = -1
 
 [node name="NavigationPolygonInstance" type="NavigationPolygonInstance" parent="border_a"]
 
+transform/pos = Vector2( 16, 16 )
 navpoly = SubResource( 4 )
 enabled = true
 
@@ -84,29 +89,33 @@ enabled = true
 
 transform/pos = Vector2( 32, 0 )
 texture = ExtResource( 1 )
+centered = false
 region = true
 region_rect = Rect2( 330, 66, 32, 32 )
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="border_b"]
 
-transform/pos = Vector2( 6, 0 )
+transform/pos = Vector2( 22, 16 )
 shape = SubResource( 5 )
 trigger = false
 _update_shape_index = -1
 
 [node name="NavigationPolygonInstance" type="NavigationPolygonInstance" parent="border_b"]
 
+transform/pos = Vector2( 16, 16 )
 navpoly = SubResource( 6 )
 enabled = true
 
 [node name="border_c" type="Sprite" parent="."]
 
 texture = ExtResource( 1 )
+centered = false
 region = true
 region_rect = Rect2( 330, 264, 32, 32 )
 
 [node name="CollisionPolygon2D" type="CollisionPolygon2D" parent="border_c"]
 
+transform/pos = Vector2( 16, 16 )
 build_mode = 0
 polygon = Vector2Array( -16, -16, 16, -16, 16, 16, 0, 16, 0, 0, -16, 0 )
 shape_range = Vector2( -1, -1 )
@@ -114,6 +123,7 @@ trigger = false
 
 [node name="NavigationPolygonInstance" type="NavigationPolygonInstance" parent="border_c"]
 
+transform/pos = Vector2( 16, 16 )
 navpoly = SubResource( 7 )
 enabled = true
 

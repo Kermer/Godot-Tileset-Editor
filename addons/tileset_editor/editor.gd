@@ -3,10 +3,10 @@ tool
 
 extends WindowDialog
 
-var tileset_script = load("res://addons/tileset_editor/tileset.gd")
-var icon_collider = load("res://addons/tileset_editor/icons/icon_collision_shape_2d.png")
-var icon_occlusion = load("res://addons/tileset_editor/icons/icon_light_occluder_2d.png")
-var icon_navpoly = load("res://addons/tileset_editor/icons/icon_navigation_polygon_instance.png")
+const tileset_script = preload("res://addons/tileset_editor/tileset.gd")
+const icon_collider = preload("res://addons/tileset_editor/icons/icon_collision_shape_2d.png")
+const icon_occlusion = preload("res://addons/tileset_editor/icons/icon_light_occluder_2d.png")
+const icon_navpoly = preload("res://addons/tileset_editor/icons/icon_navigation_polygon_instance.png")
 
 # region export variables
 
@@ -188,9 +188,9 @@ func refresh_toolbox():
 		if current_tex_id < 0 || current_tex_id >= tileset.tileset_data.size():
 			return
 		var items = []
-		if mode == 1: items = tileset.collisions # Collision shape
-		elif mode == 2: items = tileset.occluders # Occluder shape
-		elif mode == 3: items = tileset.navpolys # Navpoly shape
+		if mode == 1: items = tileset.shapes.collision # Collision shape
+		elif mode == 2: items = tileset.shapes.occluder # Occluder shape
+		elif mode == 3: items = tileset.shapes.navpoly # Navpoly shape
 		
 		var item_id = 0
 		for item in items:
@@ -225,13 +225,13 @@ func _on_shape_btn(which):
 		selected_shapes.sort()
 		selected_shapes.invert() # Go from biggest ID to lowest
 		for shape_id in selected_shapes:
-			if current_mode == 1: tileset.remove_collision(shape_id); shape_list.remove_item(shape_id)
-			elif current_mode == 2: tileset.remove_occluder(shape_id); shape_list.remove_item(shape_id)
-			elif current_mode == 3: tileset.remove_navpoly(shape_id); shape_list.remove_item(shape_id)
+			if current_mode == 1: tileset.remove_shape("collision",shape_id); shape_list.remove_item(shape_id)
+			elif current_mode == 2: tileset.remove_shape("occluder",shape_id); shape_list.remove_item(shape_id)
+			elif current_mode == 3: tileset.remove_shape("navpoly",shape_id); shape_list.remove_item(shape_id)
 	elif (which == 2 or which == 3): # Attach or Deattach (Add/Remove from tile)
 		var selected_shapes = shape_list.get_selected_items()
 		var err_text = ""
-		if (current_mode==1 and tileset.collisions.size()==0) or (current_mode==2 and tileset.occluders.size()==0) or (current_mode==3 and tileset.navpolys.size()==0): 
+		if (current_mode==1 and tileset.shapes.collision.size()==0) or (current_mode==2 and tileset.shapes.occluder.size()==0) or (current_mode==3 and tileset.shapes.navpoly.size()==0): 
 			err_text += "\n\tThere are no shapes, please import some..."
 		elif selected_shapes.size() == 0: err_text += "\n\tNo shapes selected!"
 		elif (selected_shapes.size() > 1 and which==2): err_text += "\n\tCurrently you can only add 1 shape per tile :("
@@ -241,29 +241,25 @@ func _on_shape_btn(which):
 			return
 		if which == 2: # Attach
 			if current_mode == 1:
-				for tile in selected_tiles: tileset.attach_collision(current_tex_id,tile,selected_shapes[0])
+				for tile in selected_tiles: tileset.attach_shape("collision",current_tex_id,tile,selected_shapes[0])
 			elif current_mode == 2:
-				for tile in selected_tiles: tileset.attach_occluder(current_tex_id,tile,selected_shapes[0])
+				for tile in selected_tiles: tileset.attach_shape("occluder",current_tex_id,tile,selected_shapes[0])
 			elif current_mode == 3:
-				for tile in selected_tiles: tileset.attach_navpoly(current_tex_id,tile,selected_shapes[0])
+				for tile in selected_tiles: tileset.attach_shape("navpoly",current_tex_id,tile,selected_shapes[0])
 			refresh_active_shapes(selected_shapes) # Override active selection with 'selected_shapes'
 		elif which == 3: # Deattach
 			if current_mode == 1:
-				for tile in selected_tiles: tileset.deattach_collision(current_tex_id,tile,selected_shapes[0])
+				for tile in selected_tiles: tileset.deattach_shape("collision",current_tex_id,tile,selected_shapes[0])
 			elif current_mode == 2:
-				for tile in selected_tiles: tileset.deattach_occluder(current_tex_id,tile,selected_shapes[0])
+				for tile in selected_tiles: tileset.deattach_shape("occluder",current_tex_id,tile,selected_shapes[0])
 			elif current_mode == 3:
-				for tile in selected_tiles: tileset.deattach_navpoly(current_tex_id,tile,selected_shapes[0])
+				for tile in selected_tiles: tileset.deattach_shape("navpoly",current_tex_id,tile,selected_shapes[0])
 			refresh_active_shapes()
 		
 
 func _on_shape_import_success( import_data ):
 	for shape_data in import_data:
-		var type = shape_data.type
-		shape_data.erase("type")
-		if type == "collision": tileset.add_collision( shape_data )
-		elif type == "navpoly": tileset.add_navpoly( shape_data )
-		elif type == "occluder": tileset.add_occluder( shape_data )
+		tileset.add_shape(shape_data)
 	refresh_toolbox()
 	show()
 	
@@ -274,12 +270,12 @@ func _on_shape_import_cancel():
 func _layout_changed(val):
 	if !changing_texture:
 		if current_tex_id >= 0 and current_tex_id < tileset.tileset_data.size():
-			tileset.tileset_data[current_tex_id].x_off = layout_spinboxes[0].get_value()
-			tileset.tileset_data[current_tex_id].y_off = layout_spinboxes[1].get_value()
-			tileset.tileset_data[current_tex_id].w = layout_spinboxes[2].get_value()
-			tileset.tileset_data[current_tex_id].h = layout_spinboxes[3].get_value()
-			tileset.tileset_data[current_tex_id].x_sep = layout_spinboxes[4].get_value()
-			tileset.tileset_data[current_tex_id].y_sep = layout_spinboxes[5].get_value()
+			tileset.tileset_data[current_tex_id].offset.x = layout_spinboxes[0].get_value()
+			tileset.tileset_data[current_tex_id].offset.y = layout_spinboxes[1].get_value()
+			tileset.tileset_data[current_tex_id].tile_size.x = layout_spinboxes[2].get_value()
+			tileset.tileset_data[current_tex_id].tile_size.y = layout_spinboxes[3].get_value()
+			tileset.tileset_data[current_tex_id].tile_sep.x = layout_spinboxes[4].get_value()
+			tileset.tileset_data[current_tex_id].tile_sep.y = layout_spinboxes[5].get_value()
 			overlay.update()
 
 func _on_texture_added(file_path):
@@ -302,7 +298,7 @@ func _on_texture_selected(id):
 	current_tex_id = id
 	var tex = tileset.tileset_data[id]
 	texture_view.set_texture(tex.texture)
-	var values = [tex.x_off,tex.y_off,tex.w,tex.h,tex.x_sep,tex.y_sep]
+	var values = [tex.offset.x,tex.offset.y,tex.tile_size.x,tex.tile_size.y,tex.tile_sep.x,tex.tile_sep.y]
 	for i in range(values.size()):
 		layout_spinboxes[i].set_value(values[i])
 	selected_tiles.clear()
@@ -315,46 +311,46 @@ func _draw_overlay():
 	
 	var tex = tileset.tileset_data[current_tex_id]
 	# Hide unused area
-	overlay.draw_rect(Rect2(0,0,tex.x_off,tex.texture.get_height()), Color(0.273758,0.290014,0.300781,0.764498))
-	overlay.draw_rect(Rect2(tex.x_off,0,tex.texture.get_width()-tex.x_off,tex.y_off), Color(0.273758,0.290014,0.300781,0.764498))
+	overlay.draw_rect(Rect2(0,0,tex.offset.x,tex.texture.get_height()), Color(0.273758,0.290014,0.300781,0.764498))
+	overlay.draw_rect(Rect2(tex.offset.x,0,tex.texture.get_width()-tex.offset.x,tex.offset.y), Color(0.273758,0.290014,0.300781,0.764498))
 	# Fill separation
-	var x = int(tex.x_off+tex.w)%int(tex.w+tex.x_sep)
-	var y = int(tex.y_off)%int(tex.h+tex.y_sep)
+	var x = int(tex.offset.x+tex.tile_size.x)%int(tex.tile_size.x+tex.tile_sep.x)
+	var y = int(tex.offset.y)%int(tex.tile_size.y+tex.tile_sep.y)
 	while x < tex.texture.get_width():
-		overlay.draw_rect(Rect2(x,0,tex.x_sep,tex.texture.get_height()), Color(0.835938,0.362457,0.595498))
-		x += tex.w+tex.x_sep
-	var x = int(tex.x_off)%int(tex.w+tex.x_sep)
-	var y = int(tex.y_off+tex.h)%int(tex.h+tex.y_sep)
+		overlay.draw_rect(Rect2(x,0,tex.tile_sep.x,tex.texture.get_height()), Color(0.835938,0.362457,0.595498))
+		x += tex.tile_size.x+tex.tile_sep.x
+	var x = int(tex.offset.x)%int(tex.tile_size.x+tex.tile_sep.x)
+	var y = int(tex.offset.y+tex.tile_size.y)%int(tex.tile_size.y+tex.tile_sep.y)
 	while y < tex.texture.get_height():
-		overlay.draw_rect(Rect2(0,y,tex.texture.get_width(),tex.y_sep), Color(0.835938,0.362457,0.595498))
-		y += tex.h+tex.y_sep
+		overlay.draw_rect(Rect2(0,y,tex.texture.get_width(),tex.tile_sep.y), Color(0.835938,0.362457,0.595498))
+		y += tex.tile_size.y+tex.tile_sep.y
 	# Draw Grid
-	var x = tex.x_off+tex.w-1
-	var y = tex.y_off
-	var end = tex.texture.get_height()-(int(tex.texture.get_height()-tex.y_off)%int(tex.h))
-	if tex.x_sep==0:
+	var x = tex.offset.x+tex.tile_size.x-1
+	var y = tex.offset.y
+	var end = tex.texture.get_height()-(int(tex.texture.get_height()-tex.offset.y)%int(tex.tile_size.y))
+	if tex.tile_sep.x==0:
 		while x < tex.texture.get_width():
 			overlay.draw_line( Vector2(x,y), Vector2 (x,end), Color(0.395508,0.608757,0.75))
-			x += tex.w+tex.x_sep
-	var x = tex.x_off
-	var y = tex.y_off+tex.h-1
-	var end = tex.texture.get_width()-(int(tex.texture.get_width()-tex.x_off)%int(tex.w))
-	if tex.y_sep==0:
+			x += tex.tile_size.x+tex.tile_sep.x
+	var x = tex.offset.x
+	var y = tex.offset.y+tex.tile_size.y-1
+	var end = tex.texture.get_width()-(int(tex.texture.get_width()-tex.offset.x)%int(tex.tile_size.x))
+	if tex.tile_sep.y==0:
 		while y < tex.texture.get_height():
 			overlay.draw_line( Vector2(x,y), Vector2 (end,y), Color(0.395508,0.608757,0.75))
-			y += tex.h+tex.y_sep
+			y += tex.tile_size.y+tex.tile_sep.y
 	# Hide not exported
-	var grid_width = int((tex.texture.get_width()-tex.x_off)/(tex.w+tex.x_sep))
-	var grid_height = int((tex.texture.get_height()-tex.y_off)/(tex.h+tex.y_sep))
+	var grid_width = int((tex.texture.get_width()-tex.offset.x)/(tex.tile_size.x+tex.tile_sep.x))
+	var grid_height = int((tex.texture.get_height()-tex.offset.y)/(tex.tile_size.y+tex.tile_sep.y))
 	for x in range(grid_width):
 		for y in range(grid_height):
 			if !tex.data.has(Vector2(x,y)) || !tex.data[Vector2(x,y)]["export"]:
-				overlay.draw_rect(Rect2(tex.x_off+x*(tex.w+tex.x_sep),tex.y_off+y*(tex.h+tex.y_sep),tex.w,tex.h),Color(1,0.18,0.1,0.3))
+				overlay.draw_rect(Rect2(tex.offset.x+x*(tex.tile_size.x+tex.tile_sep.x),tex.offset.y+y*(tex.tile_size.y+tex.tile_sep.y),tex.tile_size.x,tex.tile_size.y),Color(1,0.18,0.1,0.3))
 	# Mark selected tile
 	for selected_tile in selected_tiles:
-		var x = tex.x_off + (tex.w+tex.x_sep)*selected_tile.x
-		var y = tex.y_off + (tex.h+tex.y_sep)*selected_tile.y
-		overlay.draw_rect(Rect2(x,y,tex.w,tex.h),Color(0.1,0.1,1,0.3))
+		var x = tex.offset.x + (tex.tile_size.x+tex.tile_sep.x)*selected_tile.x
+		var y = tex.offset.y + (tex.tile_size.y+tex.tile_sep.y)*selected_tile.y
+		overlay.draw_rect(Rect2(x,y,tex.tile_size.x,tex.tile_size.y),Color(0.1,0.1,1,0.3))
 
 var action = 0 # 0:None 1:Add 2:Remove
 var last_coord = Vector2(-1,-1)
@@ -372,20 +368,20 @@ func _input_overlay(ev):
 				return
 			if ev.button_index == 1: # LMB
 				action = 1
-				if (ev.x < tex.x_off || ev.y < tex.y_off):
+				if (ev.x < tex.offset.x || ev.y < tex.offset.y):
 					return
-				var x = int(ev.x-tex.x_off)/int(tex.w+tex.x_sep)
-				var y = int(ev.y-tex.y_off)/int(tex.h+tex.y_sep)
+				var x = int(ev.x-tex.offset.x)/int(tex.tile_size.x+tex.tile_sep.x)
+				var y = int(ev.y-tex.offset.y)/int(tex.tile_size.y+tex.tile_sep.y)
 				var coord = Vector2(x,y)
 				_tile_selected(coord,action,(ev.control))
 				overlay.update()
 				last_coord = coord
 			elif ev.button_index == 2: # RMB
 				action = 2
-				if (ev.x < tex.x_off || ev.y < tex.y_off):
+				if (ev.x < tex.offset.x || ev.y < tex.offset.y):
 					return
-				var x = int(ev.x-tex.x_off)/int(tex.w+tex.x_sep)
-				var y = int(ev.y-tex.y_off)/int(tex.h+tex.y_sep)
+				var x = int(ev.x-tex.offset.x)/int(tex.tile_size.x+tex.tile_sep.x)
+				var y = int(ev.y-tex.offset.y)/int(tex.tile_size.y+tex.tile_sep.y)
 				var coord = Vector2(x,y)
 				_tile_selected(coord,action,(ev.control))
 				overlay.update()
@@ -393,16 +389,22 @@ func _input_overlay(ev):
 		if ev.type==InputEvent.MOUSE_BUTTON&&!ev.pressed:
 			action = 0
 		if ev.type==InputEvent.MOUSE_MOTION:
-			if action == 0 || ev.x < tex.x_off || ev.y < tex.y_off:
+			if action == 0 || not is_inside_tex(tex,ev.x,ev.y):
 				return
-			var x = int(ev.x-tex.x_off)/int(tex.w+tex.x_sep)
-			var y = int(ev.y-tex.y_off)/int(tex.h+tex.y_sep)
+			var x = int(ev.x-tex.offset.x)/int(tex.tile_size.x+tex.tile_sep.x)
+			var y = int(ev.y-tex.offset.y)/int(tex.tile_size.y+tex.tile_sep.y)
 			var coord = Vector2(x,y)
 			if coord == last_coord:
 				return
 			_tile_selected(coord,action,true)
 			overlay.update()
 			last_coord = coord
+
+func is_inside_tex(tex,arg0,arg1=null):
+	var pos = Vector2(-1,-1)
+	if arg1 != null: pos = Vector2(arg0,arg1)
+	else: pos = arg0
+	return (pos.x>=tex.offset.x && pos.y>=tex.offset.y) && (pos.x<tex.texture.get_size().x && pos.y<tex.texture.get_size().y)
 
 func _tile_selected(coord,action,append):
 	var tex = tileset.tileset_data[current_tex_id]
@@ -430,14 +432,14 @@ func refresh_active_shapes(forced=null):
 		if selected_tiles.size() == 1:
 			var tile = selected_tiles[0]
 			var tile_data = tileset.tileset_data[current_tex_id].data[tile]
-			if current_mode == 1 and tile_data.has("collision"): 
-				var shape_id = tileset.collisions.find(tile_data["collision"])
-				active_shapes = [ shape_id ]
-			elif current_mode == 2 and tile_data.has("occluder"): 
-				var shape_id = tileset.occluders.find(tile_data["occluder"])
-				active_shapes = [ shape_id ]
-			elif current_mode == 3 and tile_data.has("navpoly"): 
-				var shape_id = tileset.navpolys.find(tile_data["navpoly"])
+			print(tile_data)
+			var type = ""
+			if current_mode == 1: type = "collision"
+			elif current_mode == 2: type = "occluder"
+			elif current_mode == 3: type = "navpoly"
+			if tile_data.has(type):
+				var shape_data = tile_data[type]
+				var shape_id = tileset.shapes[type].find(shape_data)
 				active_shapes = [ shape_id ]
 	for shape_id in range(shape_list.get_item_count()):
 		shape_list.set_item_custom_bg_color(shape_id,Color(1,1,1,0))

@@ -211,7 +211,7 @@ func get_import_data():
 
 func add_import_data_recursively(tree_item,list):
 	if is_import(tree_item):
-		var d = {"type":"undefined","icon":null,"icon_region":Rect2(Vector2(),Vector2())} # default values
+		var d = {"type":"undefined","icon":null,"icon_region":Rect2(Vector2(),Vector2()),"shape":null} # default values
 		var node = tree_item.get_metadata(0)
 		d["name"] = tree_item.get_metadata(0).get_parent().get_name()
 		var icon = tree_item.get_metadata(0).get_parent()
